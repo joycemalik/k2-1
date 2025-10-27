@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paramedic AI Protocol Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f8f8;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .input-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .input-group input[type="number"],
+        .input-group textarea {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1em;
+            width: calc(100% - 22px); /* Account for padding and border */
+            box-sizing: border-box;
+        }
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .results-section {
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+        .results-section h3 {
+            color: #34495e;
+            margin-bottom: 10px;
+        }
+        .results-section pre {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #eee;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 50px;
+            line-height: 1.5;
+            color: #444;
+        }
+        .loading {
+            text-align: center;
+            font-style: italic;
+            color: #777;
+            margin-top: 10px;
+            display: none;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 10px;
+            text-align: center;
+        }
+        @media (min-width: 768px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+            }
+            .input-column {
+                grid-column: 1;
+            }
+            .results-column {
+                grid-column: 2;
+                border-left: 1px solid #eee;
+                padding-left: 20px;
+            }
+            h1 {
+                grid-column: 1 / -1;
+            }
+            button, .loading, .error {
+                grid-column: 1; /* Keep these in the input column */
+            }
+        }
+        @media (max-width: 767px) {
+             .container {
+                padding: 20px;
+            }
+            .results-section {
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Paramedic AI Protocol Assistant</h1>
+
+        <div class="input-column">
+            <h2>Patient Vitals & Complaint</h2>
+            <div class="input-group">
+                <label for="hr">Heart Rate (bpm):</label>
+                <input type="number" id="hr" value="72" placeholder="e.g., 72">
+            </div>
+            <div class="input-group">
+                <label for="bpSystolic">BP Systolic (mmHg):</label>
+                <input type="number" id="bpSystolic" value="120" placeholder="e.g., 120">
+            </div>
+            <div class="input-group">
+                <label for="bpDiastolic">BP Diastolic (mmHg):</label>
+                <input type="number" id="bpDiastolic" value="80" placeholder="e.g., 80">
+            </div>
+            <div class="input-group">
+                <label for="rr">Respiratory Rate (breaths/min):</label>
+                <input type="number" id="rr" value="16" placeholder="e.g., 16">
+            </div>
+            <div class="input-group">
+                <label for="spo2">SpO2 (%):</label>
+                <input type="number" id="spo2" value="98" placeholder="e.g., 98">
+            </div>
+            <div class="input-group">
+                <label for="temp">Temperature (°C):</label>
+                <input type="number" id="temp" step="0.1" value="37.0" placeholder="e.g., 37.0">
+            </div>
+            <div class="input-group">
+                <label for="chiefComplaint">Chief Complaint:</label>
+                <textarea id="chiefComplaint" placeholder="e.g., Chest pain, difficulty breathing, altered mental status">Patient reports sudden, severe chest pain radiating to left arm.</textarea>
+            </div>
+            <button id="suggestProtocol">Suggest Protocol</button>
+            <div id="loading" class="loading">Generating suggestion...</div>
+            <div id="errorMessage" class="error" style="display: none;"></div>
+        </div>
+
+        <div class="results-column">
+            <h2>Suggested Protocols</h2>
+            <div class="results-section">
+                <h3>AI Reasoning (Gemini)</h3>
+                <pre id="aiReasoning">Enter patient vitals and chief complaint to get AI suggestions.</pre>
+            </div>
+            <div class="results-section">
+                <h3>Interpreted Protocol (Database Check)</h3>
+                <pre id="interpretedProtocol">Protocols will appear here after AI reasoning and database check.</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "AIzaSyBjZ8Dt2vWTVEREUcLu6dnyIA7OmD-k09c"; // Provided API Key
+        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+
+        // Simulated Medical Database for interpretation/checking layer
+        // In a real application, this would be a sophisticated database query or API call.
+        const medicalProtocols = new Map([
+            ["cardiac arrest", "Immediate CPR, activate ALS, prepare defibrillator, administer epinephrine as per ACLS guidelines."],
+            ["chest pain", "Obtain 12-lead ECG, administer aspirin (if not contraindicated), consider nitroglycerin (if BP stable), oxygen if SpO2 < 94%, rapid transport to cardiac center."],
+            ["difficulty breathing", "Administer high-flow oxygen, assist ventilations if needed, consider bronchodilators for bronchospasm, assess for underlying cause (e.g., asthma, COPD, pulmonary edema)."],
+            ["altered mental status", "Assess ABCs, check blood glucose, consider Narcan for suspected opioid overdose, rule out trauma, rapid transport."],
+            ["hypotension", "Administer IV fluid bolus (e.g., Normal Saline 250-500ml), assess for hemorrhage or shock, consider vasopressors as per protocol (if available)."],
+            ["hypertension", "Monitor blood pressure closely, assess for signs of end-organ damage (e.g., severe headache, altered vision), transport to medical facility. Avoid rapid BP reduction unless symptomatic."],
+            ["hypoxemia", "Administer high-flow oxygen via non-rebreather mask or BVM, ensure patent airway."],
+            ["tachycardia", "Assess for stability (perfusion status), obtain 12-lead ECG, consider vagal maneuvers if SVT, transport."],
+            ["bradycardia", "Assess for stability (symptomatic vs. asymptomatic), prepare for pacing, administer atropine if symptomatic."],
+            ["fever", "Administer antipyretics (e.g., acetaminophen), assess for signs of infection, ensure adequate hydration, transport if severe or with other concerning symptoms."],
+            ["stroke", "Perform Cincinnati Prehospital Stroke Scale or LAPSS, note last known normal time, rapid transport to stroke center, notify hospital."],
+            ["seizure", "Protect patient from injury, monitor airway, note duration and type of seizure, do not restrain forcefully, transport after seizure cessation and post-ictal assessment."],
+            ["trauma", "Assess for life-threatening injuries (ABCDE), control severe bleeding, stabilize cervical spine (if indicated), rapid transport to trauma center."],
+            ["allergic reaction", "Assess airway and breathing, administer epinephrine (IM), consider antihistamines and corticosteroids, administer oxygen."],
+            ["diabetes", "Check blood glucose. For hypoglycemia: administer oral glucose if conscious, IV dextrose if unconscious. For hyperglycemia: ensure hydration, transport."],
+            ["nausea and vomiting", "Administer antiemetics as per protocol, ensure hydration, assess for underlying cause, transport if persistent or severe."],
+            ["abdominal pain", "Assess pain characteristics, vital signs, and potential causes. Maintain NPO, transport, consider pain management as per protocol."],
+        ]);
+
+        document.getElementById('suggestProtocol').addEventListener('click', async () => {
+            const hr = document.getElementById('hr').value;
+            const bpSystolic = document.getElementById('bpSystolic').value;
+            const bpDiastolic = document.getElementById('bpDiastolic').value;
+            const rr = document.getElementById('rr').value;
+            const spo2 = document.getElementById('spo2').value;
+            const temp = document.getElementById('temp').value;
+            const chiefComplaint = document.getElementById('chiefComplaint').value.trim();
+
+            const aiReasoningEl = document.getElementById('aiReasoning');
+            const interpretedProtocolEl = document.getElementById('interpretedProtocol');
+            const loadingEl = document.getElementById('loading');
+            const errorMessageEl = document.getElementById('errorMessage');
+
+            // Reset outputs and show loading
+            aiReasoningEl.textContent = 'Generating suggestion...';
+            interpretedProtocolEl.textContent = 'Awaiting AI reasoning and database check...';
+            errorMessageEl.style.display = 'none';
+            loadingEl.style.display = 'block';
+
+            if (!chiefComplaint || !hr || !bpSystolic || !bpDiastolic || !rr || !spo2 || !temp) {
+                errorMessageEl.textContent = 'Please fill in all vital signs and the chief complaint.';
+                errorMessageEl.style.display = 'block';
+                aiReasoningEl.textContent = 'Error: Missing inputs.';
+                interpretedProtocolEl.textContent = 'Error: Missing inputs.';
+                loadingEl.style.display = 'none';
+                return;
+            }
+
+            const prompt = `A paramedic is assessing a patient. Here are the vital signs and chief complaint:
+            - Heart Rate: ${hr} bpm
+            - Blood Pressure: ${bpSystolic}/${bpDiastolic} mmHg
+            - Respiratory Rate: ${rr} breaths/min
+            - SpO2: ${spo2}%
+            - Temperature: ${temp}°C
+            - Chief Complaint: ${chiefComplaint}
+
+            Based on this information, act as an experienced medical expert.
+            1. Provide a concise differential diagnosis or primary concern.
+            2. Suggest the immediate next steps and medical protocols a paramedic should consider, focusing on critical interventions.
+            3. Explain your reasoning briefly.
+            Please structure your response clearly, starting with "Primary Concern:", then "Suggested Protocols:", and "Reasoning:".`;
+
+            try {
+                const response = await fetch(GEMINI_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API error: ${response.status} - ${errorData.error ? errorData.error.message : response.statusText}`);
+                }
+
+                const data = await response.json();
+                const aiResponseText = data.candidates[0].content.parts[0].text;
+                aiReasoningEl.textContent = aiResponseText;
+
+                // --- Interpretation and Checking Layer ---
+                let interpretedProtocol = "No specific protocol matched from database. Follow AI reasoning and local guidelines.";
+                const lowerCaseAiResponse = aiResponseText.toLowerCase();
+                const lowerCaseChiefComplaint = chiefComplaint.toLowerCase();
+
+                // 1. Keyword matching against simulated medical database
+                for (const [condition, protocol] of medicalProtocols) {
+                    if (lowerCaseAiResponse.includes(condition) || lowerCaseChiefComplaint.includes(condition)) {
+                        interpretedProtocol = protocol;
+                        break; // Found a match, take the first one
+                    }
+                }
+
+                // 2. Critical vital sign checks (override/add to matched protocols if necessary)
+                let additionalProtocols = [];
+
+                if (parseFloat(spo2) < 94) {
+                    if (!interpretedProtocol.includes("oxygen")) {
+                        additionalProtocols.push("Administer supplemental oxygen to maintain SpO2 > 94%.");
+                    }
+                }
+                if (parseFloat(hr) < 50 && (lowerCaseChiefComplaint.includes("dizziness") || lowerCaseChiefComplaint.includes("syncope") || lowerCaseAiResponse.includes("bradycardia"))) {
+                    if (!interpretedProtocol.includes("bradycardia") && !interpretedProtocol.includes("atropine")) {
+                        additionalProtocols.push("Assess for symptomatic bradycardia; prepare for atropine or transcutaneous pacing.");
+                    }
+                }
+                if (parseFloat(hr) > 100 && (lowerCaseChiefComplaint.includes("palpitations") || lowerCaseAiResponse.includes("tachycardia"))) {
+                     if (!interpretedProtocol.includes("tachycardia") && !interpretedProtocol.includes("ECG")) {
+                        additionalProtocols.push("Assess for symptomatic tachycardia; obtain 12-lead ECG and consider vagal maneuvers.");
+                    }
+                }
+                 if (parseFloat(bpSystolic) < 90 && (lowerCaseChiefComplaint.includes("weakness") || lowerCaseChiefComplaint.includes("dizziness") || lowerCaseAiResponse.includes("hypotension"))) {
+                     if (!interpretedProtocol.includes("hypotension") && !interpretedProtocol.includes("fluid bolus")) {
+                        additionalProtocols.push("Assess for hypoperfusion and shock; consider IV fluid bolus (250-500ml Normal Saline) unless contraindicated.");
+                    }
+                }
+                if (parseFloat(rr) > 24 || parseFloat(rr) < 10) {
+                     if (!interpretedProtocol.includes("breathing") && !interpretedProtocol.includes("ventilation")) {
+                        additionalProtocols.push("Assess respiratory effort and airway; assist ventilations if inadequate.");
+                    }
+                }
+
+                if (additionalProtocols.length > 0) {
+                    interpretedProtocol += "\n\nAdditional Considerations based on Vitals:\n" + additionalProtocols.join('\n');
+                }
+
+                interpretedProtocolEl.textContent = interpretedProtocol;
+
+            } catch (error) {
+                console.error('Error fetching AI suggestion:', error);
+                errorMessageEl.textContent = `Failed to get AI suggestion: ${error.message}. Please check your API key and network connection.`;
+                errorMessageEl.style.display = 'block';
+                aiReasoningEl.textContent = 'Error during AI communication.';
+                interpretedProtocolEl.textContent = 'Error during AI communication.';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
